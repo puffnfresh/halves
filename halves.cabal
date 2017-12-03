@@ -10,6 +10,16 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Data.Halves
+                     , Data.Halves.FiniteBits
+                     , Data.Halves.Tuple
   build-depends:       base >=4.9 && <4.10
                      , lens
   default-language:    Haskell2010
+
+test-suite props
+  type:                exitcode-stdio-1.0
+  main-is:             tests/Props.hs
+  build-depends:       base >=4.9 && <4.10
+                     , lens
+                     , halves
+                     , hedgehog

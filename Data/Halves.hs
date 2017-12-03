@@ -15,11 +15,14 @@ module Data.Halves (
 , collectQuarters
 , collectEighths
 
-, finiteBitsHalves
+, finiteBitHalves
 ) where
 
 import           Control.Lens
 import           Data.Bits
+import           Data.Halves.FiniteBits
+import           Data.Halves.Tuple
+import           Data.Int
 import           Data.Word
 
 class Halves a b | a -> b, b -> a where
@@ -31,7 +34,7 @@ class Halves a b | a -> b, b -> a where
 -- 300
 instance Halves Word16 Word8 where
   halves =
-    finiteBitsHalves
+    finiteBitHalves
 
 -- >>> (65538 :: Word32) ^. halves
 -- (1,2)
@@ -39,7 +42,7 @@ instance Halves Word16 Word8 where
 -- 65538
 instance Halves Word32 Word16 where
   halves =
-    finiteBitsHalves
+    finiteBitHalves
 
 -- >>> (4294967299 :: Word64) ^. halves
 -- (1,3)
@@ -47,7 +50,31 @@ instance Halves Word32 Word16 where
 -- 4294967299
 instance Halves Word64 Word32 where
   halves =
-    finiteBitsHalves
+    finiteBitHalves
+
+-- >>> (-30748 :: Int16) ^. halves
+-- (-121,-28)
+-- >>> ((-121) :: Int8, (-28) :: Int8) ^. from halves
+-- -30748
+instance Halves Int16 Int8 where
+  halves =
+    finiteBitHalves
+
+-- >>> (-1610312736 :: Int32) ^. halves
+-- (-24572,-27680)
+-- >>> (-24572 :: Int16, -27680 :: Int16) ^. from halves
+-- -1610312736
+instance Halves Int32 Int16 where
+  halves =
+    finiteBitHalves
+
+-- >>> (-6917529027641081356 :: Int64) ^. halves
+-- (-1610612736,500)
+-- >>> (-1610612736 :: Int32, 500 :: Int32) ^. from halves
+-- -6917529027641081356
+instance Halves Int64 Int32 where
+  halves =
+    finiteBitHalves
 
 -- >>> (3201205369 :: Word32) ^. quarters
 -- (190,206,132,121)
@@ -124,39 +151,16 @@ collectEighths (a:b:c:d:e:f:g:h:xs) =
 collectEighths _ =
   []
 
--- >>> (((), True), ("three", 'f')) ^. tuple4
--- ((),True,"three",'f')
--- >>> ((), True, "three", 'f') ^. from tuple4
--- (((),True),("three",'f'))
-tuple4 ::
-  Iso' ((a, b), (c, d)) (a, b, c, d)
-tuple4 =
-  iso f g
-  where
-    f ((a, b), (c, d)) =
-      (a, b, c, d)
-    g (a, b, c, d) =
-      ((a, b), (c, d))
-
--- >>> (((), True, "three", 'f'), ('a', False, "x", ())) ^. tuple8
--- ((),True,"three",'f','a',False,"x",())
-tuple8 ::
-  Iso' ((a, b, c, d), (e, f, g, h)) (a, b, c, d, e, f, g, h)
-tuple8 =
-  iso f g
-  where
-    f ((a, b, c, d), (e, f', g', h)) =
-      (a, b, c, d, e, f', g', h)
-    g (a, b, c, d, e, f', g', h) =
-      ((a, b, c, d), (e, f', g', h))
-
-finiteBitsHalves :: forall a b. (Bits a, FiniteBits b, Integral a, Integral b) => Iso' a (b, b)
-finiteBitsHalves =
+finiteBitHalves ::
+  forall a b c.
+  (Integral a, Integral b, FiniteBits a, AsFiniteBits b c, Integral c, Halves a b) =>
+  Iso' a (b, b)
+finiteBitHalves =
   iso f g
   where
     s =
-      finiteBitSize (zeroBits :: b)
+      finiteBitSize (zeroBits :: c)
     f a =
-      (fromIntegral (shiftR a s), fromIntegral a)
+      (fromIntegral (unsafeShiftR a s), fromIntegral a)
     g (a, b) =
-      shiftL (fromIntegral a) s .|. fromIntegral b
+      unsafeShiftL (fromIntegral a) s .|. fromIntegral (b ^. asFiniteBits)
