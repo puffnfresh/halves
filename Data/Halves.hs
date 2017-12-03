@@ -153,7 +153,7 @@ collectEighths _ =
 
 finiteBitHalves ::
   forall a b c.
-  (Integral a, Integral b, FiniteBits a, AsFiniteBits b c, Integral c, Halves a b) =>
+  (Integral a, Integral b, Integral c, Bits a, AsFiniteBits b c) =>
   Iso' a (b, b)
 finiteBitHalves =
   iso f g
