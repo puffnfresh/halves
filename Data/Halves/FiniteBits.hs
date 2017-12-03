@@ -51,19 +51,3 @@ instance AsFiniteBits Int32 Word32 where
 instance AsFiniteBits Int64 Word64 where
   asFiniteBits =
     asFiniteBitsDefault
-
--- logicalShiftL ::
---   (AsFiniteBits a b) =>
---   a ->
---   Int ->
---   a
--- logicalShiftL a i =
---   a & asFiniteBits %~ flip unsafeShiftL i
-
--- logicalShiftR ::
---   (AsFiniteBits a b) =>
---   a ->
---   Int ->
---   a
--- logicalShiftR a i =
---   a & asFiniteBits %~ flip unsafeShiftR i
