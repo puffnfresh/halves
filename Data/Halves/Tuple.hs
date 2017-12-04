@@ -1,9 +1,21 @@
 module Data.Halves.Tuple (
-  tuple4
+  Pair2
+, Pair4
+, Pair8
+, tuple4
 , tuple8
 ) where
 
 import           Control.Lens
+
+type Pair2 a
+  = (a, a)
+
+type Pair4 a
+  = (a, a, a, a)
+
+type Pair8 a
+  = (a, a, a, a, a, a, a, a)
 
 -- >>> (((), True), ("three", 'f')) ^. tuple4
 -- ((),True,"three",'f')

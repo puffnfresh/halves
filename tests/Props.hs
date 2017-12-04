@@ -11,16 +11,16 @@ import           System.Exit    (exitFailure)
 import           System.IO
 
 isoToFrom ::
-  (MonadTest m, Eq a, Show a) =>
-  Iso' a b ->
-  a ->
+  (MonadTest m, Eq s, Show s) =>
+  Iso' s a ->
+  s ->
   m ()
 isoToFrom i a =
   a ^. i ^. from i === a
 
 prop_iso ::
-  (Halves a b, Eq a, Show a) =>
-  Gen a ->
+  (Halves' s a, Eq s, Show s) =>
+  Gen s ->
   Property
 prop_iso g =
   property $ forAll g >>= isoToFrom halves
