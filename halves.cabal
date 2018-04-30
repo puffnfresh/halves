@@ -1,7 +1,7 @@
 name:                halves
 version:             0.1.0.0
-synopsis:            Splitting/combining data structures to/from halves, quarters, eighths
-description:         Splitting/combining data structures to/from halves, quarters, eighths.
+synopsis:            Split or combine data structures to and from halves, quarters, eighths
+description:         Split or combine data structures to and from halves, quarters, eighths.
 license:             BSD3
 license-file:        LICENSE
 author:              Brian McKenna
