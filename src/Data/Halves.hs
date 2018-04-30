@@ -11,6 +11,9 @@ module Data.Halves (
 , lowerHalf
 , swappedHalves
 
+, chunkHalves
+, chunkQuarters
+, chunkEighths
 , collectHalves
 , collectQuarters
 , collectEighths
@@ -19,10 +22,11 @@ module Data.Halves (
 ) where
 
 import           Control.Lens
-import           Data.Bits
-import           Data.Halves.FiniteBits
-import           Data.Halves.Tuple
+import           Data.Bits              (Bits (..), finiteBitSize)
+import           Data.Halves.FiniteBits (AsFiniteBits (..))
+import           Data.Halves.Tuple      (tuple4, tuple8)
 import           Data.Int
+import           Data.Monoid            ((<>))
 import           Data.Word
 
 class Halves a b | a -> b, b -> a where
@@ -118,38 +122,86 @@ swappedHalves ::
 swappedHalves =
   halves . swapped . from halves
 
--- >>> collectHalves ([1, 2, 3, 4, 5, 6, 7, 8] :: [Word8])
+-- >>> ([1,2,3,4,5,6,7,8,9] :: [Word8]) ^. chunkHalves
+-- ([258,772,1286,1800],[9])
+-- >>> ([258,772,1286,1800 :: Word16],[9]) ^. from chunkHalves
+-- [1,2,3,4,5,6,7,8,9]
+chunkHalves ::
+  (Halves a b) =>
+  Iso' [b] ([a], [b])
+chunkHalves =
+  iso f g
+  where
+    f (a:b:xs) =
+      ([(a, b) ^. from halves], []) <> f xs
+    f xs =
+      ([], xs)
+    g (xs, ys) =
+      ((h . (^. halves)) =<< xs) <> ys
+    h (a, b) =
+      [a, b]
+
+-- >>> ([1,2,3,4,5,6,7,8,9] :: [Word8]) ^. chunkQuarters
+-- ([16909060,84281096],[9])
+-- >>> ([16909060,84281096 :: Word32],[9]) ^. from chunkQuarters
+-- [1,2,3,4,5,6,7,8,9]
+chunkQuarters ::
+  (Halves a b, Halves b c) =>
+  Iso' [c] ([a], [c])
+chunkQuarters =
+  iso f g
+  where
+    f (a:b:c:d:xs) =
+      ([(a, b, c, d) ^. from quarters], []) <> f xs
+    f xs =
+      ([], xs)
+    g (xs, ys) =
+      ((h . (^. quarters)) =<< xs) <> ys
+    h (a, b, c, d) =
+      [a, b, c, d]
+
+-- >>> ([1,2,3,4,5,6,7,8,9] :: [Word8]) ^. chunkEighths
+-- ([72623859790382856],[9])
+-- >>> ([72623859790382856 :: Word64],[9]) ^. from chunkEighths
+-- [1,2,3,4,5,6,7,8,9]
+chunkEighths ::
+  (Halves a b, Halves b c, Halves c d) =>
+  Iso' [d] ([a], [d])
+chunkEighths =
+  iso f g
+  where
+    f (a:b:c:d:e:f':g':h':xs) =
+      ([(a, b, c, d, e, f', g', h') ^. from eighths], []) <> f xs
+    f xs =
+      ([], xs)
+    g (xs, ys) =
+      ((h . (^. eighths)) =<< xs) <> ys
+    h (a, b, c, d, e, f', g', h') =
+      [a, b, c, d, e, f', g', h']
+
+-- >>> ([1,2,3,4,5,6,7,8,9] :: [Word8]) ^. collectHalves
 -- [258,772,1286,1800]
 collectHalves ::
   (Halves a b) =>
-  [b] ->
-  [a]
-collectHalves (a:b:xs) =
-  (a, b) ^. from halves : collectHalves xs
-collectHalves _ =
-  []
+  Lens' [b] [a]
+collectHalves =
+  chunkHalves . _1
 
--- >>> collectQuarters ([1, 2, 3, 4, 5, 6, 7, 8] :: [Word8])
+-- >>> ([1,2,3,4,5,6,7,8,9] :: [Word8]) ^. collectQuarters
 -- [16909060,84281096]
 collectQuarters ::
   (Halves a b, Halves b c) =>
-  [c] ->
-  [a]
-collectQuarters (a:b:c:d:xs) =
-  (a, b, c, d) ^. from quarters : collectQuarters xs
-collectQuarters _ =
-  []
+  Lens' [c] [a]
+collectQuarters =
+  chunkQuarters . _1
 
--- >>> collectEighths ([1, 2, 3, 4, 5, 6, 7, 8] :: [Word8])
+-- >>> ([1,2,3,4,5,6,7,8,9] :: [Word8]) ^. collectEighths
 -- [72623859790382856]
 collectEighths ::
   (Halves a b, Halves b c, Halves c d) =>
-  [d] ->
-  [a]
-collectEighths (a:b:c:d:e:f:g:h:xs) =
-  (a, b, c, d, e, f, g, h) ^. from eighths : collectEighths xs
-collectEighths _ =
-  []
+  Lens' [d] [a]
+collectEighths =
+  chunkEighths . _1
 
 finiteBitHalves ::
   forall a b c.
